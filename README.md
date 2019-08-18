@@ -1,4 +1,4 @@
-# Examples
+### Examples
 
 ```
 const markdown = require("markup-tools/markdown"),
