@@ -2,9 +2,6 @@ Sbml = (function() {
     return {}
 })();
 
-Sbml.urls  = require("urls");
-Sbml.texts = require("texts");
-
 Sbml.generate_from_markdown = function(markdown, images) {
     var sbml =  this._elements_to_sbml(markdown.elements, images, false);
 
@@ -443,7 +440,7 @@ Sbml._elements_to_sbml = function(elements, images, inline) {
         }
 
         if (element.type === "iframe-tag") {
-            var youtube_video_id = self.urls.get_youtube_video_id(element.data["url"]);
+            var youtube_video_id = self._get_youtube_video_id(element.data["url"]);
 
             if (youtube_video_id) {
                 if (!element.data["inline"] && inline_depth == 0) {
@@ -592,10 +589,32 @@ Sbml._handle_text = function(text) {
     text = text.replace(/\\/g, "").replace(/(\[|\]|=|\(|\))/g, "\\$1");
     text = text.replace(/(^|\W+)@([a-z0-9\-]+(?:\.[a-z0-9\-]+)*)/g, "$1=[user:username=\"$2\"|@$2]=");
     text = text.replace(/[ \t][ \t]+/g, " ");
-    text = this.texts.replace_emoji_chars(text, "=[emoji|$1]=");
+    text = this._replace_emoji_chars(text, "=[emoji|$1]=");
     text = decode("html", text);
 
     return text;
+}
+
+Sbml._replace_emoji_chars = function(text, replaced_text) {
+    var pattern = /((?:\ud83c[\udf00-\udfff]|\ud83d[\udc00-\ude4f]|\ud83d[\ude80-\udeff])+)/g
+
+    return text.replace(pattern, replaced_text);
+}
+
+Sbml._get_youtube_video_id = function(url) {
+    var matched = /https?:\/\/.*youtube\.com\/.*\?.*v=([^&/?#]+).*/.exec(url);
+
+    if (!matched) {
+        matched = /https?:\/\/.*youtube\.com\/embed\/([^/?#]+).*/.exec(url);
+    }
+
+    if (!matched) {
+        matched = /https?:\/\/youtu\.be\/([^/?#]+)(?:\?.+)?/.exec(url);
+    }
+
+    if (matched) {
+        return matched[1];
+    }
 }
 
 Sbml._encode_url = function(url) {
