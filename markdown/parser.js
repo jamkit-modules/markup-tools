@@ -1,10 +1,9 @@
 MarkdownParser = (function() {
-    return {};
+    return {}
 })();
 
 MarkdownParser.parse = function(text) {
-    console.log(text);
-    var elements = MarkdownParser.__parse_to_markdown(MarkdownParser.__normalize_text(text), false);
+    var elements = this._parse_to_markdown(this._normalize_text(text), false);
 
     elements.forEach(function(element) {
         console.log(JSON.stringify(element));
@@ -14,7 +13,7 @@ MarkdownParser.parse = function(text) {
     return elements;
 }
 
-MarkdownParser.__parse_to_markdown = function(text, inline) {
+MarkdownParser._parse_to_markdown = function(text, inline) {
     var tokenizer = /((?:^|\n+) {0,3}(?:(?:- *)+|(?:_ *)+|(?:\* *)+)(?:\n+|$))|(?:(?:^|\n) {0,3}(`{3,}|~{3,})(.*)(?:\n|$))|((?:(?:^|\n) *>(?: *[^ \n].*(?:\n *[^ \n].*)*|.*))+)|((?:(?:^|\n) *\* +.*(?:\n *`{0,2}[^` \n].+)*(?: *\n *)?)+|(?:(?:^|\n) *\+ +.*(?:\n *`{0,2}[^` \n].+)*(?: *\n *)?)+|(?:(?:^|\n) *\- +.*(?:\n *`{0,2}[^` \n].+)*(?: *\n *)?)+|(?:(?:^|\n) *\d+\. +.*(?:\n *`{0,2}[^` \n].+)*(?: *\n *)?)+)|((?:^|\n+) *\|?(?:[^\n|]*\|)+(?:[^\n|]*)?\n *\|?(?:(?: *:?-+:? *)\|)+(?: *:?-+:? *)? *(?:\n|$)(?: *\|?(?:[^\n|]*\|)+(?:[^\n|]*)?(?:\n|$))*)|\!\[(.*?)\]\(((?:\([^)]*?\)|[^)])*)\)|(\[)|(\]\(((?:\([^)]*?\)|[^)])*)\))|(\])|(?:(?:^|\n) *(#{1,6}) *(?:\n+|$))|(?:(?:^|\n) *(#{1,6}) +(.+)(?:\n+|$))|((?:https?:\/\/)((?:[a-z0-9\-]+\.?)+(?::[0-9]+)?)((?:\/(?:\([\w\d.\-_~$&'+,;=:@%\u00C0-\uFFFF]*\)|[\w\d.\-_~$&'+,;=:@%\u00C0-\uFFFF])+)|\/)*(?:[?#][\w\d.\-_~$&'+,;=:@%/\u00C0-\uFFFF]+)*)|(`+(?:\n[^\n]|[^`\n])*`+)|(?:<a(?: +[^\n>]*)href=(\".+?\"|\'.+?\'|[^ >]+?)(?: +[^\n>]*)?>)(.+?)<\/a(?: +[^\n>]*)?>|(?:<img(?: +[^\n>]*)src=(\".+?\"|\'.+?\'|[^ >]+)(?: +[^\n>]*)?\/?>(?:<\/img(?: +[^\n>]*)?>)?)|(?:<iframe(?: +(?:\"[^\"]*\"|[^\n>])*)?src=(\".+?\"|\'.+?\'|[^ >]+)(?: +(?:\"[^\"]*\"|[^\n>])*)?>(?:<\/iframe(?: +[^\n>]*)?>)?)|(?:<(strong|strike|b|i|code|sub|sup)(?: +[^\n>]*)?>)|(?:<\/(strong|strike|b|i|code|sub|sup)(?: +[^\n>]*)?>)|(<h[1-6](?: +[^\n>]*)?>)|(<\/h[1-6](?: +[^\n>]*)?>)|(<div(?: +[^\n>]*)?>)|(<\/div(?: +[^\n>]*)?>)|(<p(?: +[^\n>]*|\/)?>)|(<\/p(?: +[^\n>]*)?>)|(<blockquote(?: +[^\n>]*)?>)|(<\/blockquote(?: +[^\n>]*)?>)|(<center(?: +[^\n>]*)?>)|(<\/center(?: +[^\n>]*)?>)|(<pre(?: +[^\n>]*)?>)|(<\/pre(?: +[^\n>]*)?>)|(?:<(table|tr|th|td)(?: +[^\n>]*)?>)|(?:<\/(table|tr|th|td)(?: +[^\n>]*)?>)|(\n*<br(?: +[^\n>]*)?\/?>)|(\n*<hr(?: +[^\n>]*)?\/?>)|(<\/?[a-z]+(?: +[^\n>]*|\/)?>)|((?: *\n){2,}|([ \n]?)(?:(_{1,3})|(\*{1,3})|(~{2})))/igm;
     var elements = [], begin_tags = [], formatters = [];
     var token, text_chunk, element;
@@ -33,7 +32,7 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
             }
         } else if (token[2]) { // code block
             var pattern = new RegExp("(?:^|\\n) {0,3}" + token[2][0] + "{3,}(?:\n|$)");
-            var subtexts = MarkdownParser.__split_text_for_delemeter(text, tokenizer.lastIndex, pattern);
+            var subtexts = this._split_text_for_delemeter(text, tokenizer.lastIndex, pattern);
 
             if (text_chunk) {
                 elements.push({
@@ -76,10 +75,11 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
             text_chunk = null;
         } else if (token[4]) { // > quote
             var lines = token[4].replace(/^\n+|\n+$/, "").split(/(?:\n|^) *>/g).slice(1);
+			var self = this;
 
             lines.forEach(function(line) {
                 console.log("QUOTE: " + line);
-                var children = MarkdownParser.__parse_to_markdown(line.trim() + "\n", false);
+                var children = self._parse_to_markdown(line.trim() + "\n", false);
                 var break_met = false, first_child = true;
 
                 if (!element) {
@@ -128,6 +128,7 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
             var mark = token[5].match(/(?:^|\n) *([*+-])|(\d+)\. +/)[1];
             var indents = [], numbers = [];
             var level = 0, number = "", subtext = "";
+			var self = this;
 
             lines.forEach(function(line) {
                 var match = line.match(/^( *)(?:([*+-])|(\d+)\.) +(.*)/);
@@ -146,7 +147,7 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
 
                 if (match && (match[2] === mark) && (level == 0 || indent < indents[level - 1] + 6)) {
                     if (subtext) {
-                        var children = MarkdownParser.__parse_to_markdown(subtext, false);
+                        var children = self._parse_to_markdown(subtext, false);
                         var symbol = numbers[level - 1] ? (inline ? number : numbers[level - 1]) + "." : "";
                         var items = [], break_met = false, first_child = true;
 
@@ -200,7 +201,7 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
 
                         level = level + 1;
                     } else {
-                        level = MarkdownParser.__find_level_for_indent(indents, indent);
+                        level = self._find_level_for_indent(indents, indent);
 
                         indents = indents.slice(0, level);
                         numbers = numbers.slice(0, level);
@@ -214,7 +215,7 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
             });
 
             if (subtext) {
-                var children = MarkdownParser.__parse_to_markdown(subtext, false);
+                var children = this._parse_to_markdown(subtext, false);
                 var symbol = numbers[level - 1] ? (inline ? number : numbers[level - 1]) + "." : "";
                 var items = [], break_met = false, first_child = true;
 
@@ -272,19 +273,20 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
         } else if (token[6]) { // table
             var lines = token[6].trim().split("\n");
             var headers = [], columns = [], rows = [];
+			var self = this;
 
             lines[0].replace(/^ *\||\| *$/g, "").trim().split("|").forEach(function(text) {
-                headers.push(MarkdownParser.__parse_to_markdown(text.trim(), true));
+                headers.push(self._parse_to_markdown(text.trim(), true));
             });
 
             lines[1].replace(/^ *\||\| *$/g, "").trim().split("|").forEach(function(text) {
-                columns.push(MarkdownParser.__align_for_table_column(text.trim()));
+                columns.push(self._align_for_table_column(text.trim()));
             });
 
             lines.slice(2).forEach(function(line) {
                 var row = [];
                 line.replace(/^ *\||\| *$/g, "").trim().split("|").forEach(function(text) {
-                    row.push(MarkdownParser.__parse_to_markdown(text.trim(), true));
+                    row.push(self._parse_to_markdown(text.trim(), true));
                 });
 
                 rows.push(row);
@@ -318,7 +320,7 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
 
             formatters.push([]);  
         } else if (token[10]) { // end of link
-            var link_begin_or_text = MarkdownParser.__last_link_begin_or_text(elements);
+            var link_begin_or_text = this._last_link_begin_or_text(elements);
 
             if (token[11] && link_begin_or_text) { // link
                 link_begin_or_text["type"] = "link-begin";
@@ -332,7 +334,7 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
                     }
                 }
 
-                MarkdownParser.__clear_unhandled_begins(formatters.pop());
+                this._clear_unhandled_begins(formatters.pop());
             } else {
                 if (link_begin_or_text) {
                     link_begin_or_text["type"] = "text";
@@ -347,7 +349,7 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
                 }
             }
         } else if (token[12]) { // "]"
-            var link_begin_or_text = MarkdownParser.__last_link_begin_or_text(elements);
+            var link_begin_or_text = this._last_link_begin_or_text(elements);
 
             if (link_begin_or_text) {
                 link_begin_or_text["type"] = "text";
@@ -364,7 +366,7 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
             element = {
                 type:"heading",
                 data:{
-                    elements:MarkdownParser.__parse_to_markdown(token[14] ? token[15].replace(/\s+#+$/, "") : " ", true),
+                    elements:this._parse_to_markdown(token[14] ? token[15].replace(/\s+#+$/, "") : " ", true),
                     level:(token[13] || token[14]).length,
                     leadings:(token.index > 0) ? "\n" : "",
                     inline:inline,
@@ -406,7 +408,7 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
                 type:"anchor-tag",
                 data:{
                     url:token[20].replace(/^["']|["']/g, "").trim(),
-                    elements:MarkdownParser.__parse_to_markdown(token[21], true),
+                    elements:this._parse_to_markdown(token[21], true),
                     inline:inline
                 }
             }
@@ -486,7 +488,7 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
                 }
             }
         } else if (token[36]) { // pre tag
-            var subtexts = MarkdownParser.__split_text_for_delemeter(text, tokenizer.lastIndex, /<\/pre>/);
+            var subtexts = this._split_text_for_delemeter(text, tokenizer.lastIndex, /<\/pre>/);
 
             if (text_chunk) {
                 elements.push({
@@ -562,7 +564,7 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
             var prior = token[44] || "";
 
             if (symbol === "_" || symbol === "*" || symbol === "~") {
-                var formatter_begin = MarkdownParser.__last_formatter_begin(elements, symbol);
+                var formatter_begin = this._last_formatter_begin(elements, symbol);
                 var prevchar = prior || text.substring(Math.max(token.index - 1, 0), token.index);
                 var nextchar = text.substring(tokenizer.lastIndex, tokenizer.lastIndex + 1);
                 
@@ -625,7 +627,7 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
                     }
                 }
 
-                MarkdownParser.__clear_unhandled_begins(elements);
+                this._clear_unhandled_begins(elements);
             }
         }
 
@@ -646,12 +648,12 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
                 if (tag[2] === "begin") {
                     begin_tags.push(element);
                 } else {
-                    MarkdownParser.__handle_mismatched_tags(elements, tag[1], element.data["inline"], begin_tags);
+                    this._handle_mismatched_tags(elements, tag[1], element.data["inline"], begin_tags);
                 }
             }
 
             if (element.data["break"]) {
-                MarkdownParser.__clear_unhandled_begins(elements);
+                this._clear_unhandled_begins(elements);
             }
 
             elements.push(element);
@@ -675,13 +677,13 @@ MarkdownParser.__parse_to_markdown = function(text, inline) {
         });
     }
 
-    MarkdownParser.__handle_mismatched_tags(elements, "", false, begin_tags);
-    MarkdownParser.__clear_unhandled_begins(elements);
+    this._handle_mismatched_tags(elements, "", false, begin_tags);
+    this._clear_unhandled_begins(elements);
 
     return elements;
 }
 
-MarkdownParser.__split_text_for_delemeter = function(text, index, delemeter) {
+MarkdownParser._split_text_for_delemeter = function(text, index, delemeter) {
     var subtext = text.substring(index, text.length);
     var token = delemeter.exec(subtext);
 
@@ -695,14 +697,14 @@ MarkdownParser.__split_text_for_delemeter = function(text, index, delemeter) {
     return [ subtext, "" ];
 }
 
-MarkdownParser.__normalize_text = function(text) {
+MarkdownParser._normalize_text = function(text) {
     text = text.replace(/\r\n|\r/g, "\n");
     text = text.replace(/[\xA0\t]/g, " ");
 
     return text;
 }
 
-MarkdownParser.__last_link_begin_or_text = function(elements) {
+MarkdownParser._last_link_begin_or_text = function(elements) {
     if (elements.length > 0) {
         for (var i = elements.length - 1; i >= 0; i--) {
             if (elements[i].type === "link-begin-or-text") {
@@ -712,7 +714,7 @@ MarkdownParser.__last_link_begin_or_text = function(elements) {
     }
 }
 
-MarkdownParser.__last_formatter_begin = function(elements, symbol) {
+MarkdownParser._last_formatter_begin = function(elements, symbol) {
     if (elements.length > 0) {
         for (var i = elements.length - 1; i >= 0; i--) {
             if (elements[i].type === "formatter-begin") {
@@ -724,7 +726,7 @@ MarkdownParser.__last_formatter_begin = function(elements, symbol) {
     }
 }
 
-MarkdownParser.__handle_mismatched_tags = function(elements, tag, inline, begin_tags) {
+MarkdownParser._handle_mismatched_tags = function(elements, tag, inline, begin_tags) {
     if (tag && begin_tags.length > 0 && !begin_tags[begin_tags.length - 1]["type"].startsWith(tag)) {
         elements.push({
             type:tag + "-tag-begin",
@@ -761,7 +763,7 @@ MarkdownParser.__handle_mismatched_tags = function(elements, tag, inline, begin_
     }
 }
 
-MarkdownParser.__clear_unhandled_begins = function(elements) {
+MarkdownParser._clear_unhandled_begins = function(elements) {
     elements.forEach(function(element) {
         if (["link-begin-or-text", "formatter-begin"].includes(element.type)) {
             element["type"] = "text";
@@ -769,7 +771,7 @@ MarkdownParser.__clear_unhandled_begins = function(elements) {
     });
 }
 
-MarkdownParser.__align_for_table_column = function(text) {
+MarkdownParser._align_for_table_column = function(text) {
     if (text[0] === ":") {
         if (text[text.length - 1] === ":") {
             return "center";
@@ -785,7 +787,7 @@ MarkdownParser.__align_for_table_column = function(text) {
     return "left";
 }
 
-MarkdownParser.__find_level_for_indent = function(indents, indent) {
+MarkdownParser._find_level_for_indent = function(indents, indent) {
     for (var index = indents.length - 1; index >= 0; --index) {
         if (indents[index] <= indent) {
             return index + 1;

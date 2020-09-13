@@ -1,12 +1,12 @@
 Sbml = (function() {
-    return {};
+    return {}
 })();
 
 Sbml.urls  = require("urls");
 Sbml.texts = require("texts");
 
 Sbml.generate_from_markdown = function(markdown, images) {
-    var sbml =  Sbml.__elements_to_sbml(markdown.elements, images, false);
+    var sbml =  this._elements_to_sbml(markdown.elements, images, false);
 
     sbml = sbml.replace(/( *\n){3,}/g, "\n\n");
 
@@ -16,23 +16,24 @@ Sbml.generate_from_markdown = function(markdown, images) {
     return sbml;
 }
 
-Sbml.__elements_to_sbml = function(elements, images, inline) {
+Sbml._elements_to_sbml = function(elements, images, inline) {
     var sbml = "";
     var center_begin_pos = 0;
     var center_began = false;
     var center_ended = false;
     var inline_depth = 0;
+	var self = this;
 
     elements.forEach(function(element) {
         if (element.type === "text") {
             if (!element.data["inline"] && inline_depth == 0) {
                 sbml += center_ended ? "\n=end center\n" : "";
-                sbml += Sbml.__handle_text(element.data["text"]);
+                sbml += self.__handle_text(element.data["text"]);
 
                 center_begin_pos = sbml.length;
                 center_ended = false;
             } else {
-                sbml += Sbml.__handle_text(element.data["text"]);
+                sbml += self.__handle_text(element.data["text"]);
             }
 
             return;
@@ -71,14 +72,14 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
 
         if (element.type === "heading") {
             if (!element.data["inline"] && inline_depth == 0) {
-                var has_center_tag = Sbml.__has_center_tag(element.data["elements"]);
+                var has_center_tag = self._has_center_tag(element.data["elements"]);
                 var needs_center_style = has_center_tag || center_began;
                 sbml += center_ended ? "\n=end center\n" : "";
                 sbml += has_center_tag ? "\n=begin center\n" : "";
                 sbml += element.data["leadings"];
                 sbml += "\n";
                 sbml += "=begin heading-" + element.data["level"] + (needs_center_style ? ": style=center" : "") + "\n";
-                sbml += Sbml.__elements_to_sbml(element.data["elements"], images, true) + "\n";
+                sbml += self._elements_to_sbml(element.data["elements"], images, true) + "\n";
                 sbml += "=end heading-" + element.data["level"] + "\n";
                 sbml += has_center_tag ? "\n=end center\n" : "";
 
@@ -96,13 +97,13 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
                 sbml += center_ended ? "\n=end center\n" : "";
                 sbml += "\n";
                 sbml += "=begin quote\n";
-                sbml += Sbml.__elements_to_sbml(element.data["elements"], images, false) + "\n";
+                sbml += self._elements_to_sbml(element.data["elements"], images, false) + "\n";
                 sbml += "=end quote\n";
 
                 center_begin_pos = sbml.length;
                 center_ended = false;
             } else {
-                sbml += Sbml.__elements_to_sbml(element.data["elements"], images, true) + "\n";
+                sbml += self._elements_to_sbml(element.data["elements"], images, true) + "\n";
                 sbml += "\n";
             }
 
@@ -116,7 +117,7 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
                 sbml += "=begin list\n";
                 element.data["items"].forEach(function(item) {
                     sbml += "=begin list-item: style=list-level-" + item[1] + ", bullet-text=\"" + (item[0] || "•") + "\"\n";
-                    sbml += Sbml.__elements_to_sbml(item[2], images, false) + "\n";
+                    sbml += self._elements_to_sbml(item[2], images, false) + "\n";
                     sbml += "=end list-item\n";
                 });
                 sbml += "=end list\n";
@@ -126,7 +127,7 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
             } else {
                 element.data["items"].forEach(function(item) {
                     sbml += "\n";
-                    sbml += (item[0] || "•") + " " + Sbml.__elements_to_sbml(item[2], images, true);
+                    sbml += (item[0] || "•") + " " + self._elements_to_sbml(item[2], images, true);
                 });
                 sbml += "\n";
             }
@@ -142,7 +143,7 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
                 sbml += "=begin tr: style=tr-header\n";
                 element.data["headers"].forEach(function(elements) {
                     sbml += "=begin th\n";
-                    sbml += Sbml.__elements_to_sbml(elements, images, false) + "\n";
+                    sbml += self._elements_to_sbml(elements, images, false) + "\n";
                     sbml += "=end th\n";
                 });
                 sbml += "=end tr\n";
@@ -152,7 +153,7 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
                     sbml += "=begin tr: style=" + (even ? "tr-even" : "tr-odd") + "\n";
                     row.forEach(function(elements) {
                         sbml += "=begin td: style=" + (even ? "td-even" : "td-odd") + "\n";
-                        sbml += Sbml.__elements_to_sbml(elements, images, false) + "\n";
+                        sbml += self._elements_to_sbml(elements, images, false) + "\n";
                         sbml += "=end td\n";
                     });
                     sbml += "=end tr\n";
@@ -406,7 +407,7 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
         }
 
         if (element.type === "image") {
-            var image_url = Sbml.__encode_url(Sbml.__url_for_image(element.data["url"]));
+            var image_url = self._encode_url(self._url_for_image(element.data["url"]));
             var filename = element.data["filename"] || "";
 
             if (!element.data["inline"] && inline_depth == 0) {
@@ -424,7 +425,7 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
         }
 
         if (element.type === "image-tag") {
-            var image_url = Sbml.__encode_url(Sbml.__url_for_image(element.data["url"]));
+            var image_url = self._encode_url(self._url_for_image(element.data["url"]));
             var filename = element.data["filename"] || "";
 
             if (!element.data["inline"] && inline_depth == 0) {
@@ -442,7 +443,7 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
         }
 
         if (element.type === "iframe-tag") {
-            var youtube_video_id = Sbml.urls.get_youtube_video_id(element.data["url"]);
+            var youtube_video_id = self.urls.get_youtube_video_id(element.data["url"]);
 
             if (youtube_video_id) {
                 if (!element.data["inline"] && inline_depth == 0) {
@@ -459,7 +460,7 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
                 return;
             }
 
-            var url = Sbml.__encode_url(element.data["url"]);
+            var url = self._encode_url(element.data["url"]);
 
             if (!element.data["inline"] && inline_depth == 0) {
                 sbml += center_ended ? "\n=end center\n" : "";
@@ -476,7 +477,7 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
         }
 
         if (element.type === "link-begin") {
-            sbml += "=[link: script=open_url, url=\"" + Sbml.__encode_url(element.data["url"]) + "\"|";
+            sbml += "=[link: script=open_url, url=\"" + self._encode_url(element.data["url"]) + "\"|";
             inline_depth = inline_depth + 1;
 
             return;
@@ -490,13 +491,13 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
         }
 
         if (element.type === "anchor-tag") {
-            sbml += "=[link: script=open_url, url=\"" + Sbml.__encode_url(element.data["url"]) + "\"|" + Sbml.__elements_to_sbml(element.data["elements"], images, true) + "]=";
+            sbml += "=[link: script=open_url, url=\"" + self._encode_url(element.data["url"]) + "\"|" + self._elements_to_sbml(element.data["elements"], images, true) + "]=";
 
             return;
         }
 
         if (element.type === "url") {
-            var youtube_video_id = Sbml.urls.get_youtube_video_id(element.data["url"]);
+            var youtube_video_id = self.urls.get_youtube_video_id(element.data["url"]);
 
             if (youtube_video_id) {
                 if (!element.data["inline"] && inline_depth == 0) {
@@ -513,8 +514,8 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
                 return;
             }
 
-            if (Sbml.__is_image_url((images || []), element.data["url"]) || Sbml.__is_image_path(element.data["path"] || "")) {
-                var image_url = Sbml.__encode_url(Sbml.__url_for_image(element.data["url"]));
+            if (self._is_image_url((images || []), element.data["url"]) || self._is_image_path(element.data["path"] || "")) {
+                var image_url = self._encode_url(self._url_for_image(element.data["url"]));
                 var filename = element.data["filename"] || "";
                 
                 if (!element.data["inline"] && inline_depth == 0) {
@@ -531,7 +532,7 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
                 return;
             }
 
-            sbml += "=[link: script=open_url, url=\"" + Sbml.__encode_url(element.data["url"]) + "\"|" + element.data["url"] + "]=";
+            sbml += "=[link: script=open_url, url=\"" + self._encode_url(element.data["url"]) + "\"|" + element.data["url"] + "]=";
 
             return;
         }
@@ -576,7 +577,7 @@ Sbml.__elements_to_sbml = function(elements, images, inline) {
     return sbml;
 }
 
-Sbml.__has_center_tag = function(elements) {
+Sbml._has_center_tag = function(elements) {
     for (var i = 0; i < elements.length; ++i) {
         if (elements[i].type === "center-tag-begin") {
             return true;
@@ -586,24 +587,24 @@ Sbml.__has_center_tag = function(elements) {
     return false;
 }
 
-Sbml.__handle_text = function(text) {
+Sbml._handle_text = function(text) {
     text = text.replace(/\u2028|\u2029/g, "\n"); // unicode line seperators
     text = text.replace(/\\/g, "").replace(/(\[|\]|=|\(|\))/g, "\\$1");
     text = text.replace(/(^|\W+)@([a-z0-9\-]+(?:\.[a-z0-9\-]+)*)/g, "$1=[user:username=\"$2\"|@$2]=");
     text = text.replace(/[ \t][ \t]+/g, " ");
-    text = Sbml.texts.replace_emoji_chars(text, "=[emoji|$1]=");
+    text = this.texts.replace_emoji_chars(text, "=[emoji|$1]=");
     text = decode("html", text);
 
     return text;
 }
 
-Sbml.__encode_url = function(url) {
+Sbml._encode_url = function(url) {
     url = url.replace(/['"‘’]/g, "");
 
     return url;
 }
 
-Sbml.__is_image_url = function(images, url) {
+Sbml._is_image_url = function(images, url) {
     for (var index = 0; index < images.length; index++) {
         if (url.includes(images[index])) {
             return true;
@@ -613,7 +614,7 @@ Sbml.__is_image_url = function(images, url) {
     return false;
 }
 
-Sbml.__is_image_path = function(path) {
+Sbml._is_image_path = function(path) {
     if (path.match(/\.(jpg|jpeg|png|gif)(\?|\/|$)/ig)) {
         return true;
     }
@@ -621,7 +622,7 @@ Sbml.__is_image_path = function(path) {
     return false;
 }
 
-Sbml.__url_for_image = function(url, size) {
+Sbml._url_for_image = function(url, size) {
     return "https://cdn.steemitimages.com/" + (size || "640x0") + "/" + url;
 }
 

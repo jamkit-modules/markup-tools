@@ -1,5 +1,5 @@
 Markdown = (function() {
-    return {};
+    return {}
 })();
 
 Markdown.parser = include("./parser.js");
@@ -13,7 +13,7 @@ function MarkdownModel(elements) {
 // instance factory
 
 Markdown.parse = function(text, urls) {
-    return new MarkdownModel(Markdown.parser.parse(text, urls));
+    return new MarkdownModel(this.parser.parse(text, urls));
 }
 
 __MODULE__ = Markdown;
