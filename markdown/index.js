@@ -1,19 +1,16 @@
-Markdown = (function() {
-    return {}
+var module = (function() {
+    const parser = include("./parser.js");
+
+    // class MarkdownModel
+    function MarkdownModel(elements) {
+        this.elements = elements;
+    }
+
+    return {
+        parse: function(text, urls) {
+            return new MarkdownModel(parser.parse(text, urls));
+        },
+    }
 })();
 
-Markdown.parser = include("./parser.js");
-
-// class MarkdownModel
-
-function MarkdownModel(elements) {
-    this.elements = elements;
-}
-
-// instance factory
-
-Markdown.parse = function(text, urls) {
-    return new MarkdownModel(this.parser.parse(text, urls));
-}
-
-__MODULE__ = Markdown;
+__MODULE__ = module;
