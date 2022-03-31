@@ -666,7 +666,7 @@ var module = (function() {
         return elements;
     }
     
-    MarkdownParser._split_text_for_delemeter = function(text, index, delemeter) {
+    function _split_text_for_delemeter(text, index, delemeter) {
         var subtext = text.substring(index, text.length);
         var token = delemeter.exec(subtext);
     

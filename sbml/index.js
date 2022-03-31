@@ -10,14 +10,14 @@ var module = (function() {
             if (element.type === "text") {
                 if (!element.data["inline"] && inline_depth == 0) {
                     sbml += center_ended ? "\n=end center\n" : "";
-                    sbml += __handle_text(element.data["text"]);
+                    sbml += _handle_text(element.data["text"]);
     
                     center_begin_pos = sbml.length;
                     center_ended = false;
                 } else {
-                    sbml += __handle_text(element.data["text"]);
+                    sbml += _handle_text(element.data["text"]);
                 }
-    
+
                 return;
             }
     
@@ -618,7 +618,7 @@ var module = (function() {
         return false;
     }
     
-    function _is_image_pathpath) {
+    function _is_image_path(path) {
         if (path.match(/\.(jpg|jpeg|png|gif)(\?|\/|$)/ig)) {
             return true;
         }
@@ -632,11 +632,9 @@ var module = (function() {
 
     return {
         generate_from_markdown: function(markdown, images) {
-            var sbml =  _elements_to_sbml(markdown.elements, images, false);
-        
-            sbml = sbml.replace(/( *\n){3,}/g, "\n\n");
-        
-            console.log(JSON.stringify(images));
+            var sbml = _elements_to_sbml(markdown.elements, images, false);
+            
+            sbml = sbml.replace(/( *\n){3,}/g, "\n\n");        
             console.log(sbml);
         
             return sbml;
