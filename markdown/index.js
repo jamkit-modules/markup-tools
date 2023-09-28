@@ -1,13 +1,12 @@
-var module = (function() {
+const module = (() => {
     const parser = include("./parser.js");
 
-    // class MarkdownModel
     function MarkdownModel(elements) {
         this.elements = elements;
     }
 
     return {
-        parse: function(text, urls) {
+        parse: (text, urls) => {
             return new MarkdownModel(parser.parse(text, urls));
         },
     }
