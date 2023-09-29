@@ -1,4 +1,4 @@
-var module = (function() {
+const module = (() => {
     function _elements_to_sbml(elements, images, inline) {
         var sbml = "";
         var center_begin_pos = 0;
@@ -54,8 +54,9 @@ var module = (function() {
     
             if (element.type === "heading") {
                 if (!element.data["inline"] && inline_depth == 0) {
-                    var has_center_tag = _has_center_tag(element.data["elements"]);
-                    var needs_center_style = has_center_tag || center_began;
+                    const has_center_tag = _has_center_tag(element.data["elements"]);
+                    const needs_center_style = has_center_tag || center_began;
+
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += has_center_tag ? "\n=begin center\n" : "";
                     sbml += element.data["leadings"];
@@ -123,7 +124,7 @@ var module = (function() {
                     sbml += "\n";
                     sbml += "=begin table\n";
                     sbml += "=begin tr: style=tr-header\n";
-                    element.data["headers"].forEach(function(elements) {
+                    element.data["headers"].forEach((elements) => {
                         sbml += "=begin th\n";
                         sbml += _elements_to_sbml(elements, images, false) + "\n";
                         sbml += "=end th\n";
@@ -131,9 +132,9 @@ var module = (function() {
                     sbml += "=end tr\n";
     
                     var even = false;
-                    element.data["rows"].forEach(function(row) {
+                    element.data["rows"].forEach((row) => {
                         sbml += "=begin tr: style=" + (even ? "tr-even" : "tr-odd") + "\n";
-                        row.forEach(function(elements) {
+                        row.forEach((elements) => {
                             sbml += "=begin td: style=" + (even ? "td-even" : "td-odd") + "\n";
                             sbml += _elements_to_sbml(elements, images, false) + "\n";
                             sbml += "=end td\n";
@@ -184,7 +185,8 @@ var module = (function() {
     
             if (element.type === "h-tag-begin") {
                 if (!element.data["inline"] && inline_depth == 0) {
-                    var needs_center_style = center_began;
+                    const needs_center_style = center_began;
+
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += "\n";
                     sbml += "=begin heading-" + element.data["level"] + (needs_center_style ? ": style=center" : "") + "\n";
@@ -276,7 +278,7 @@ var module = (function() {
             if (element.type === "center-tag-begin") {
                 if (!element.data["inline"] && inline_depth == 0) {
                     sbml += center_ended ? "\n=end center\n" : "";
-                    sbml = sbml.substr(0, center_begin_pos) + "\n=begin center\n" + sbml.substr(center_begin_pos);
+                    sbml = sbml.substring(0, center_begin_pos) + "\n=begin center\n" + sbml.substring(center_begin_pos);
     
                     center_begin_pos = sbml.length;
                     center_began = true;
@@ -425,7 +427,7 @@ var module = (function() {
             }
     
             if (element.type === "iframe-tag") {
-                var youtube_video_id = _get_youtube_video_id(element.data["url"]);
+                const youtube_video_id = _get_youtube_video_id(element.data["url"]);
     
                 if (youtube_video_id) {
                     if (!element.data["inline"] && inline_depth == 0) {
@@ -442,7 +444,7 @@ var module = (function() {
                     return;
                 }
     
-                var url = _encode_url(element.data["url"]);
+                const url = _encode_url(element.data["url"]);
     
                 if (!element.data["inline"] && inline_depth == 0) {
                     sbml += center_ended ? "\n=end center\n" : "";
@@ -479,7 +481,7 @@ var module = (function() {
             }
     
             if (element.type === "url") {
-                var youtube_video_id = _get_youtube_video_id(element.data["url"]);
+                const youtube_video_id = _get_youtube_video_id(element.data["url"]);
     
                 if (youtube_video_id) {
                     if (!element.data["inline"] && inline_depth == 0) {
@@ -497,8 +499,8 @@ var module = (function() {
                 }
     
                 if (_is_image_url((images || []), element.data["url"]) || _is_image_path(element.data["path"] || "")) {
-                    var image_url = _encode_url(_url_for_image(element.data["url"]));
-                    var filename = element.data["filename"] || "";
+                    const image_url = _encode_url(_url_for_image(element.data["url"]));
+                    const filename = element.data["filename"] || "";
                     
                     if (!element.data["inline"] && inline_depth == 0) {
                         sbml += center_ended ? "\n=end center\n" : "";
@@ -560,8 +562,8 @@ var module = (function() {
     }
     
     function _has_center_tag(elements) {
-        for (var i = 0; i < elements.length; ++i) {
-            if (elements[i].type === "center-tag-begin") {
+        for (let index = 0; index < elements.length; ++index) {
+            if (elements[index].type === "center-tag-begin") {
                 return true;
             }
         }
@@ -581,13 +583,13 @@ var module = (function() {
     }
     
     function _replace_emoji_chars(text, replaced_text) {
-        var pattern = /((?:\ud83c[\udf00-\udfff]|\ud83d[\udc00-\ude4f]|\ud83d[\ude80-\udeff])+)/g
+        const pattern = /((?:\ud83c[\udf00-\udfff]|\ud83d[\udc00-\ude4f]|\ud83d[\ude80-\udeff])+)/g
     
         return text.replace(pattern, replaced_text);
     }
     
     function _get_youtube_video_id(url) {
-        var matched = /https?:\/\/.*youtube\.com\/.*\?.*v=([^&/?#]+).*/.exec(url);
+        let matched = /https?:\/\/.*youtube\.com\/.*\?.*v=([^&/?#]+).*/.exec(url);
     
         if (!matched) {
             matched = /https?:\/\/.*youtube\.com\/embed\/([^/?#]+).*/.exec(url);
@@ -609,7 +611,7 @@ var module = (function() {
     }
     
     function _is_image_url(images, url) {
-        for (var index = 0; index < images.length; index++) {
+        for (let index = 0; index < images.length; index++) {
             if (url.includes(images[index])) {
                 return true;
             }
