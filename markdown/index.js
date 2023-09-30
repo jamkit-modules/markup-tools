@@ -1,5 +1,5 @@
 const module = (() => {
-    const parser = include("./parser.js");
+    const parser = require("./parser");
 
     function MarkdownModel(elements) {
         this.elements = elements;
