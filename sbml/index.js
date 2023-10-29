@@ -1,4 +1,4 @@
-const module = (() => {
+const module = (function() {
     function _elements_to_sbml(elements, images, inline) {
         var sbml = "";
         var center_begin_pos = 0;

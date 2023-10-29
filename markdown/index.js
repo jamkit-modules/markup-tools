@@ -1,4 +1,4 @@
-const module = (() => {
+const module = (function() {
     const parser = require("./parser");
 
     function MarkdownModel(elements) {
@@ -6,7 +6,7 @@ const module = (() => {
     }
 
     return {
-        parse: (text, urls) => {
+        parse: function(text, urls) {
             return new MarkdownModel(parser.parse(text, urls));
         },
     }
