@@ -1,6 +1,123 @@
 const module = (function() {
+/* 
+    LINE_AND_THEMATIC_BREAK: ((?:^|\n+) {0,3}(?:(?:- *)+|(?:_ *)+|(?:\* *)+)(?:\n+|$))
+    CODE_BLOCK:              (?:(?:^|\n) {0,3}(`{3,}|~{3,})(.*)(?:\n|$))
+    BLOCK_QUOTE:             ((?:(?:^|\n) *>(?: *[^ \n].*(?:\n *[^ \n].*)*|.*))+)
+    LIST:                    ((?:(?:^|\n) *\* +.*(?:\n *`{0,2}[^` \n].+)*(?: *\n *)?)+|(?:(?:^|\n) *\+ +.*(?:\n *`{0,2}[^` \n].+)*(?: *\n *)?)+|(?:(?:^|\n) *\- +.*(?:\n *`{0,2}[^` \n].+)*(?: *\n *)?)+|(?:(?:^|\n) *\d+\. +.*(?:\n *`{0,2}[^` \n].+)*(?: *\n *)?)+)
+    TABLE:                   ((?:^|\n+) *\|?(?:[^\n|]*\|)+(?:[^\n|]*)?\n *\|?(?:(?: *:?-+:? *)\|)+(?: *:?-+:? *)? *(?:\n|$)(?: *\|?(?:[^\n|]*\|)+(?:[^\n|]*)?(?:\n|$))*)
+    IMAGE:                   !\[(.*?)\]\(((?:\([^)]*?\)|[^)])*)\)
+    BEGIN_OF_LINK:           (\[)
+    END_OF_LINK:             (\]\(((?:\([^)]*?\)|[^)])*)\))
+    END_OF_NOT_LINK:         (\])
+    HEADING_EMPTY:           (?:(?:^|\n) *(#{1,6}) *(?:\n+|$))
+    HEADING_TEXT:            (?:(?:^|\n) *(#{1,6}) +(.+)(?:\n+|$))
+    URL:                     ((?:https?:\/\/)((?:[a-z0-9\-]+\.?)+(?::[0-9]+)?)((?:\/(?:\([\w\d.\-_~$&'+,;=:@%\u00C0-\uFFFF]*\)|[\w\d.\-_~$&'+,;=:@%\u00C0-\uFFFF])+)|\/)*(?:[?#][\w\d.\-_~$&'+,;=:@%/\u00C0-\uFFFF]+)*)
+    INLINE_CODE:             (`+(?:\n[^\n]|[^`\n])*`+)
+    HTML_ANCHOR:             (?:<a(?: +[^\n>]*)href=(\".+?\"|\'.+?\'|[^ >]+?)(?: +[^\n>]*)?>)(.+?)<\/a(?: +[^\n>]*)?>
+    HTML_IMAGE:              (?:<img(?: +[^\n>]*)src=(\".+?\"|\'.+?\'|[^ >]+)(?: +[^\n>]*)?\/?>(?:<\/img(?: +[^\n>]*)?>)?)
+    HTML_IFRAME:             (?:<iframe(?: +(?:\"[^\"]*\"|[^\n>])*)?src=(\".+?\"|\'.+?\'|[^ >]+)(?: +(?:\"[^\"]*\"|[^\n>])*)?>(?:<\/iframe(?: +[^\n>]*)?>)?)
+    HTML_STRONG_BEGIN:       (?:<(strong|strike|b|i|code|sub|sup)(?: +[^\n>]*)?>)
+    HTML_STRONG_END:         (?:<\/(strong|strike|b|i|code|sub|sup)(?: +[^\n>]*)?>)
+    HTML_H_BEGIN:            (<h[1-6](?: +[^\n>]*)?>)
+    HTML_H_END:              (<\/h[1-6](?: +[^\n>]*)?>)
+    HTML_DIV_BEGIN:          (<div(?: +[^\n>]*)?>)
+    HTML_DIV_END:            (<\/div(?: +[^\n>]*)?>)
+    HTML_P_BEGIN:            (<p(?: +[^\n>]*|\/)?>)
+    HTML_P_END:              (<\/p(?: +[^\n>]*)?>)
+    HTML_BLOCKQUOTE_BEGIN:   (<blockquote(?: +[^\n>]*)?>)
+    HTML_BLOCKQUOTE_END:     (<\/blockquote(?: +[^\n>]*)?>)
+    HTML_CENTER_BEGIN:       (<center(?: +[^\n>]*)?>)
+    HTML_CENTER_END:         (<\/center(?: +[^\n>]*)?>)
+    HTML_PRE_BEGIN:          (<pre(?: +[^\n>]*)?>)
+    HTML_PRE_END:            (<\/pre(?: +[^\n>]*)?>)
+    HTML_TABLE_BEGIN:        (?:<(table|tr|th|td)(?: +[^\n>]*)?>)
+    HTML_TABLE_END:          (?:<\/(table|tr|th|td)(?: +[^\n>]*)?>)
+    HTML_BR:                 (\n*<br(?: +[^\n>]*)?\/?>)
+    HTML_HR:                 (\n*<hr(?: +[^\n>]*)?\/?>)
+    HTML_OTHER:              (<\/?[a-z]+(?: +[^\n>]*|\/)?>)
+    TEXT_FORMATTING:         ((?: *\n){2,}|([ \n]?)(?:(_{1,3})|(\*{1,3})|(~{2})))
+*/
+
+    const TokenType = {
+        LINE_AND_THEMATIC_BREAK: 1,
+        CODE_BLOCK: 2,
+        BLOCK_QUOTE: 4,
+        LIST: 5,
+        TABLE: 6,
+        IMAGE: 8,
+        BEGIN_OF_LINK: 9,
+        END_OF_LINK: 10,
+        END_OF_NOT_LINK: 12,
+        HEADING_EMPTY: 13,
+        HEADING_TEXT: 14,
+        URL: 16,
+        INLINE_CODE: 19,
+        HTML_ANCHOR: 20,
+        HTML_IMAGE: 22,
+        HTML_IFRAME: 23,
+        HTML_STRONG_BEGIN: 24,
+        HTML_STRONG_END: 25,
+        HTML_H_BEGIN: 26,
+        HTML_H_END: 27,
+        HTML_DIV_BEGIN: 28,
+        HTML_DIV_END: 29,
+        HTML_P_BEGIN: 30,
+        HTML_P_END: 31,
+        HTML_BLOCKQUOTE_BEGIN: 32,
+        HTML_BLOCKQUOTE_END: 33,
+        HTML_CENTER_BEGIN: 34,
+        HTML_CENTER_END: 35,
+        HTML_PRE_BEGIN: 36,
+        HTML_PRE_END: 37,
+        HTML_TABLE_BEGIN: 38,
+        HTML_TABLE_END: 39,
+        HTML_BR: 40,
+        HTML_HR: 41,
+        HTML_OTHER: 42,
+        TEXT_FORMATTING: 43
+    };
+
+    const _token_patterns = [
+        /* LINE_AND_THEMATIC_BREAK */ "((?:^|\\n+) {0,3}(?:(?:- *)+|(?:_ *)+|(?:\\* *)+)(?:\\n+|$))",
+        /* CODE_BLOCK              */ "(?:(?:^|\\n) {0,3}(`{3,}|~{3,})(.*)(?:\\n|$))",
+        /* BLOCK_QUOTE             */ "((?:(?:^|\\n) *>(?: *[^ \\n].*(?:\\n *[^ \\n].*)*|.*))+)",
+        /* LIST                    */ "((?:(?:^|\\n) *\\* +.*(?:\\n *`{0,2}[^` \\n].+)*(?: *\\n *)?)+|(?:(?:^|\\n) *\\+ +.*(?:\\n *`{0,2}[^` \\n].+)*(?: *\\n *)?)+|(?:(?:^|\\n) *\\- +.*(?:\\n *`{0,2}[^` \\n].+)*(?: *\\n *)?)+|(?:(?:^|\\n) *\\d+\\. +.*(?:\\n *`{0,2}[^` \\n].+)*(?: *\\n *)?)+)",
+        /* TABLE                   */ "((?:^|\\n+) *\\|?(?:[^\\n|]*\\|)+(?:[^\\n|]*)?\\n *\\|?(?:(?: *:?-+:? *)\\|)+(?: *:?-+:? *)? *(?:\\n|$)(?: *\\|?(?:[^\\n|]*\\|)+(?:[^\\n|]*)?(?:\\n|$))*)",
+        /* IMAGE                   */ "!\\[(.*?)\\]\\(((?:\\([^)]*?\\)|[^)])*)\\)",
+        /* BEGIN_OF_LINK           */ "(\\[)",
+        /* END_OF_LINK             */ "(\\]\\(((?:\\([^)]*?\\)|[^)])*)\\))",
+        /* END_OF_NOT_LINK         */ "(\\])",
+        /* HEADING_EMPTY           */ "(?:(?:^|\\n) *(#{1,6}) *(?:\\n+|$))",
+        /* HEADING_TEXT            */ "(?:(?:^|\\n) *(#{1,6}) +(.+)(?:\\n+|$))",
+        /* URL                     */ "((?:https?:\\/\\/)((?:[a-z0-9\\-]+\\.?)+(?::[0-9]+)?)((?:\\/(?:\\([\\w\\d.\\-_~$&'+,,=:@%\\u00C0-\\uFFFF]*\\)|[\\w\\d.\\-_~$&'+,,=:@%\\u00C0-\\uFFFF])+)|\\/)*(?:[?#][\\w\\d.\\-_~$&'+,,=:@%/\\u00C0-\\uFFFF]+)*)",
+        /* INLINE_CODE             */ "(`+(?:\\n[^\\n]|[^`\\n])*`+)",
+        /* HTML_ANCHOR             */ `(?:<a(?: +[^\\n>]*)href=(\\".+?\\"|\\'.+?\\'|[^ >]+?)(?: +[^\\n>]*)?>)(.+?)<\\/a(?: +[^\\n>]*)?>`,
+        /* HTML_IMAGE              */ `(?:<img(?: +[^\\n>]*)src=(\\".+?\\"|\\'.+?\\'|[^ >]+)(?: +[^\\n>]*)?\\/?>(?:<\\/img(?: +[^\\n>]*)?>)?)`,
+        /* HTML_IFRAME             */ `(?:<iframe(?: +(?:\\"[^\\"]*\\"|[^\\n>])*)?src=(\\".+?\\"|\\'.+?\\'|[^ >]+)(?: +(?:\\"[^\\"]*\\"|[^\\n>])*)?>(?:<\\/iframe(?: +[^\\n>]*)?>)?)`,
+        /* HTML_STRONG_BEGIN       */ "(?:<(strong|strike|b|i|code|sub|sup)(?: +[^\\n>]*)?>)",
+        /* HTML_STRONG_END         */ "(?:<\\/(strong|strike|b|i|code|sub|sup)(?: +[^\\n>]*)?>)",
+        /* HTML_H_BEGIN            */ "(<h[1-6](?: +[^\\n>]*)?>)",
+        /* HTML_H_END              */ "(<\\/h[1-6](?: +[^\\n>]*)?>)",
+        /* HTML_DIV_BEGIN          */ "(<div(?: +[^\\n>]*)?>)",
+        /* HTML_DIV_END            */ "(<\\/div(?: +[^\\n>]*)?>)",
+        /* HTML_P_BEGIN            */ "(<p(?: +[^\\n>]*|\\/)?>)",
+        /* HTML_P_END              */ "(<\\/p(?: +[^\\n>]*)?>)",
+        /* HTML_BLOCKQUOTE_BEGIN   */ "(<blockquote(?: +[^\\n>]*)?>)",
+        /* HTML_BLOCKQUOTE_END     */ "(<\\/blockquote(?: +[^\\n>]*)?>)",
+        /* HTML_CENTER_BEGIN       */ "(<center(?: +[^\\n>]*)?>)",
+        /* HTML_CENTER_END         */ "(<\\/center(?: +[^\\n>]*)?>)",
+        /* HTML_PRE_BEGIN          */ "(<pre(?: +[^\\n>]*)?>)",
+        /* HTML_PRE_END            */ "(<\\/pre(?: +[^\\n>]*)?>)",
+        /* HTML_TABLE_BEGIN        */ "(?:<(table|tr|th|td)(?: +[^\\n>]*)?>)",
+        /* HTML_TABLE_END          */ "(?:<\\/(table|tr|th|td)(?: +[^\\n>]*)?>)",
+        /* HTML_BR                 */ "(\\n*<br(?: +[^\\n>]*)?\\/?>)",
+        /* HTML_HR                 */ "(\\n*<hr(?: +[^\\n>]*)?\\/?>)",
+        /* HTML_OTHER              */ "(<\\/?[a-z]+(?: +[^\\n>]*|\\/)?>)",
+        /* TEXT_FORMATTING         */ "((?: *\\n){2,}|([ \\n]?)(?:(_{1,3})|(\\*{1,3})|(~{2})))",
+    ];
+
     function _parse_to_markdown(text, inline) {
-        const tokenizer = /((?:^|\n+) {0,3}(?:(?:- *)+|(?:_ *)+|(?:\* *)+)(?:\n+|$))|(?:(?:^|\n) {0,3}(`{3,}|~{3,})(.*)(?:\n|$))|((?:(?:^|\n) *>(?: *[^ \n].*(?:\n *[^ \n].*)*|.*))+)|((?:(?:^|\n) *\* +.*(?:\n *`{0,2}[^` \n].+)*(?: *\n *)?)+|(?:(?:^|\n) *\+ +.*(?:\n *`{0,2}[^` \n].+)*(?: *\n *)?)+|(?:(?:^|\n) *\- +.*(?:\n *`{0,2}[^` \n].+)*(?: *\n *)?)+|(?:(?:^|\n) *\d+\. +.*(?:\n *`{0,2}[^` \n].+)*(?: *\n *)?)+)|((?:^|\n+) *\|?(?:[^\n|]*\|)+(?:[^\n|]*)?\n *\|?(?:(?: *:?-+:? *)\|)+(?: *:?-+:? *)? *(?:\n|$)(?: *\|?(?:[^\n|]*\|)+(?:[^\n|]*)?(?:\n|$))*)|\!\[(.*?)\]\(((?:\([^)]*?\)|[^)])*)\)|(\[)|(\]\(((?:\([^)]*?\)|[^)])*)\))|(\])|(?:(?:^|\n) *(#{1,6}) *(?:\n+|$))|(?:(?:^|\n) *(#{1,6}) +(.+)(?:\n+|$))|((?:https?:\/\/)((?:[a-z0-9\-]+\.?)+(?::[0-9]+)?)((?:\/(?:\([\w\d.\-_~$&'+,;=:@%\u00C0-\uFFFF]*\)|[\w\d.\-_~$&'+,;=:@%\u00C0-\uFFFF])+)|\/)*(?:[?#][\w\d.\-_~$&'+,;=:@%/\u00C0-\uFFFF]+)*)|(`+(?:\n[^\n]|[^`\n])*`+)|(?:<a(?: +[^\n>]*)href=(\".+?\"|\'.+?\'|[^ >]+?)(?: +[^\n>]*)?>)(.+?)<\/a(?: +[^\n>]*)?>|(?:<img(?: +[^\n>]*)src=(\".+?\"|\'.+?\'|[^ >]+)(?: +[^\n>]*)?\/?>(?:<\/img(?: +[^\n>]*)?>)?)|(?:<iframe(?: +(?:\"[^\"]*\"|[^\n>])*)?src=(\".+?\"|\'.+?\'|[^ >]+)(?: +(?:\"[^\"]*\"|[^\n>])*)?>(?:<\/iframe(?: +[^\n>]*)?>)?)|(?:<(strong|strike|b|i|code|sub|sup)(?: +[^\n>]*)?>)|(?:<\/(strong|strike|b|i|code|sub|sup)(?: +[^\n>]*)?>)|(<h[1-6](?: +[^\n>]*)?>)|(<\/h[1-6](?: +[^\n>]*)?>)|(<div(?: +[^\n>]*)?>)|(<\/div(?: +[^\n>]*)?>)|(<p(?: +[^\n>]*|\/)?>)|(<\/p(?: +[^\n>]*)?>)|(<blockquote(?: +[^\n>]*)?>)|(<\/blockquote(?: +[^\n>]*)?>)|(<center(?: +[^\n>]*)?>)|(<\/center(?: +[^\n>]*)?>)|(<pre(?: +[^\n>]*)?>)|(<\/pre(?: +[^\n>]*)?>)|(?:<(table|tr|th|td)(?: +[^\n>]*)?>)|(?:<\/(table|tr|th|td)(?: +[^\n>]*)?>)|(\n*<br(?: +[^\n>]*)?\/?>)|(\n*<hr(?: +[^\n>]*)?\/?>)|(<\/?[a-z]+(?: +[^\n>]*|\/)?>)|((?: *\n){2,}|([ \n]?)(?:(_{1,3})|(\*{1,3})|(~{2})))/igm;
+        const tokenizer = new RegExp(_token_patterns.join("|"), "igm");
         const elements = [], begin_tags = [], formatters = [];
         var token, text_chunk, element;
         var last_index = 0;
@@ -8,7 +125,7 @@ const module = (function() {
         while ((token = tokenizer.exec(text))) {
             text_chunk = text.substring(last_index, token.index);
     
-            if (token[1]) { // line
+            if (token[TokenType.LINE_AND_THEMATIC_BREAK]) {
                 element = {
                     type: "line",
                     data: {
@@ -16,8 +133,8 @@ const module = (function() {
                         break: true
                     }
                 }
-            } else if (token[2]) { // code block
-                const pattern = new RegExp("(?:^|\\n) {0,3}" + token[2][0] + "{3,}(?:\n|$)");
+            } else if (token[TokenType.CODE_BLOCK]) {
+                const pattern = new RegExp("(?:^|\\n) {0,3}" + token[TokenType.CODE_BLOCK][0] + "{3,}(?:\n|$)");
                 const subtexts = _split_text_for_delemeter(text, tokenizer.lastIndex, pattern);
     
                 if (text_chunk) {
@@ -59,13 +176,12 @@ const module = (function() {
                
                 element    = null;
                 text_chunk = null;
-            } else if (token[4]) { // > quote
+            } else if (token[TokenType.BLOCK_QUOTE]) {
                 const lines = token[4].replace(/^\n+|\n+$/, "").split(/(?:\n|^) *>/g).slice(1);
                 
                 lines.forEach((line) => {
-                    console.log("QUOTE: " + line);
                     const children = _parse_to_markdown(line.trim() + "\n", false);
-                    const break_met = false, first_child = true;
+                    var break_met = false, first_child = true;
     
                     if (!element) {
                         element = {
@@ -108,10 +224,10 @@ const module = (function() {
                         first_child = false;
                     });
                 });
-            } else if (token[5]) { // *+- list
-                const lines = token[5].replace(/^\n+|\n+$/, "").split("\n");
-                const mark = token[5].match(/(?:^|\n) *([*+-])|(\d+)\. +/)[1];
-                const indents = [], numbers = [];
+            } else if (token[TokenType.LIST]) {
+                const lines = token[TokenType.LIST].replace(/^\n+|\n+$/, "").split("\n");
+                const mark = token[TokenType.LIST].match(/(?:^|\n) *([*+-])|(\d+)\. +/)[1];
+                var indents = [], numbers = [];
                 var level = 0, number = "", subtext = "";
     
                 lines.forEach((line) => {
@@ -133,7 +249,8 @@ const module = (function() {
                         if (subtext) {
                             const children = _parse_to_markdown(subtext, false);
                             const symbol = numbers[level - 1] ? (inline ? number : numbers[level - 1]) + "." : "";
-                            const items = [], break_met = false, first_child = true;
+                            const items = [];
+                            var break_met = false, first_child = true;
     
                             children.forEach((child) => {
                                 if (!break_met && child.data["break"]) {
@@ -201,7 +318,8 @@ const module = (function() {
                 if (subtext) {
                     const children = _parse_to_markdown(subtext, false);
                     const symbol = numbers[level - 1] ? (inline ? number : numbers[level - 1]) + "." : "";
-                    const items = [], break_met = false, first_child = true;
+                    const items = [];
+                    var break_met = false, first_child = true;
     
                     if (!element) {
                         element = {
@@ -254,7 +372,7 @@ const module = (function() {
                         element.data["items"].push([ symbol, level, items ]);
                     }
                 }
-            } else if (token[6]) { // table
+            } else if (token[TokenType.TABLE]) {
                 const lines = token[6].trim().split("\n");
                 const headers = [], columns = [], rows = [];
     
@@ -283,26 +401,26 @@ const module = (function() {
                         rows: rows
                     }
                 }
-            } else if (token[8]) { // image
+            } else if (token[TokenType.IMAGE]) {
                 element = {
                     type: "image",
                     data: {
-                        url: token[8].trim(),
+                        url: token[TokenType.IMAGE].trim(),
                         alt: token[7],
                         inline: true
                     }
                 }
-            } else if (token[9]) { // begin of link
+            } else if (token[TokenType.BEGIN_OF_LINK]) {
                 element = {
                     type: "link-begin-or-text",
                     data: {
-                        text: token[9], // "[" of "!["
+                        text: token[TokenType.BEGIN_OF_LINK], // "[" of "!["
                         inline: inline
                     }
                 }
     
-                formatters.push([]);  
-            } else if (token[10]) { // end of link
+                formatters.push([]);
+            } else if (token[TokenType.END_OF_LINK]) { // "](...)"
                 const link_begin_or_text = _last_link_begin_or_text(elements);
     
                 if (token[11] && link_begin_or_text) { // link
@@ -326,12 +444,12 @@ const module = (function() {
                     element = {
                         type: "text",
                         data: {
-                            text: token[10], // "](...)"
+                            text: token[TokenType.END_OF_LINK], // "](...)"
                             inline: inline
                         }
                     }
                 }
-            } else if (token[12]) { // "]"
+            } else if (token[TokenType.END_OF_NOT_LINK]) { // "]"
                 const link_begin_or_text = _last_link_begin_or_text(elements);
     
                 if (link_begin_or_text) {
@@ -341,33 +459,33 @@ const module = (function() {
                 element = {
                     type: "text",
                     data: {
-                        text: token[12], // "]"
+                        text: token[TokenType.END_OF_NOT_LINK], // "]"
                         inline: inline
                     }
                 }
-            } else if (token[13] || token[14]) { // headings
+            } else if (token[TokenType.HEADING_EMPTY] || token[TokenType.HEADING_TEXT]) {
                 element = {
                     type: "heading",
                     data: {
-                        elements: _parse_to_markdown(token[14] ? token[15].replace(/\s+#+$/, "") : " ", true),
-                        level: (token[13] || token[14]).length,
+                        elements: _parse_to_markdown(token[TokenType.HEADING_TEXT] ? token[15].replace(/\s+#+$/, "") : " ", true),
+                        level: (token[TokenType.HEADING_EMPTY] || token[TokenType.HEADING_TEXT]).length,
                         leadings: (token.index > 0) ? "\n" : "",
                         inline: inline,
                         break: true
                     }
                 }
-            } else if (token[16]) { // url
+            } else if (token[TokenType.URL]) {
                 element = {
                     type: "url",
                     data: {
-                        url: token[16].trim(),
+                        url: token[TokenType.URL].trim(),
                         host: token[17],
                         path: token[18],
                         inline: true
                     }
                 }
-            } else if (token[19]) { // ``code``
-                const code = token[19].match(/(`+)([^`]*)(`+)/);
+            } else if (token[TokenType.INLINE_CODE]) { // ``code``
+                const code = token[TokenType.INLINE_CODE].match(/(`+)([^`]*)(`+)/);
     
                 if (code[1].length == code[3].length) {
                     element = {
@@ -381,54 +499,54 @@ const module = (function() {
                     element = {
                         type: "text",
                         data: {
-                            text: token[19],
+                            text: token[TokenType.INLINE_CODE],
                             inline: inline
                         }
                     }
                 }
-            } else if (token[20]) { // anchor tag
+            } else if (token[TokenType.HTML_ANCHOR]) {
                 element = {
                     type: "anchor-tag",
                     data: {
-                        url: token[20].replace(/^["']|["']/g, "").trim(),
+                        url: token[TokenType.HTML_ANCHOR].replace(/^["']|["']/g, "").trim(),
                         elements: _parse_to_markdown(token[21], true),
                         inline: inline
                     }
                 }
-            } else if (token[22]) { // image tag
+            } else if (token[TokenType.HTML_IMAGE]) {
                 element = {
                     type: "image-tag",
                     data: {
-                        url: token[22].replace(/^["']|["']/g, "").trim(),
+                        url: token[TokenType.HTML_IMAGE].replace(/^["']|["']/g, "").trim(),
                         inline: true
                     }
                 }
-            } else if (token[23]) { // iframe tag
+            } else if (token[TokenType.HTML_IFRAME]) {
                 element = {
                     type: "iframe-tag",
                     data: {
-                        url: token[23].replace(/^["']|["']/g, "").trim(),
+                        url: token[TokenType.HTML_IFRAME].replace(/^["']|["']/g, "").trim(),
                         inline: true
                     }
                 }
-            } else if (token[24] || token[25]) { // strong, strike, bold, italic, code, sub, and sup tag
+            } else if (token[TokenType.HTML_STRONG_BEGIN] || token[TokenType.HTML_STRONG_END]) { // strong, strike, bold, italic, code, sub, and sup tag
                 element = {
-                    type: (token[24] || token[25]) + "-tag" + (token[24] ? "-begin" : "-end"),
+                    type: (token[TokenType.HTML_STRONG_BEGIN] || token[TokenType.HTML_STRONG_END]) + "-tag" + (token[TokenType.HTML_STRONG_BEGIN] ? "-begin" : "-end"),
                     data: {
                         inline: inline
                     }
                 }
-            } else if (token[26] || token[27]) { // h1~h6 tag
-                const level = (token[26] || token[27]).match(/<\/?h([1-6])/i);
+            } else if (token[TokenType.HTML_H_BEGIN] || token[TokenType.HTML_H_END]) { // h1~h6 tag
+                const level = (token[TokenType.HTML_H_BEGIN] || token[TokenType.HTML_H_END]).match(/<\/?h([1-6])/i);
     
                 element = {
-                    type: "h-tag" + (token[26] ? "-begin" : "-end"),
+                    type: "h-tag" + (token[TokenType.HTML_H_BEGIN] ? "-begin" : "-end"),
                     data: {
                         level: parseInt(level[1]),
                         inline: inline
                     }
                 }
-            } else if (token[28]) { // start of div tag
+            } else if (token[TokenType.HTML_DIV_BEGIN]) {
                 const klass = token[28].match(/class=(?:\"([^"]+)\"|([^ ,>]+))/i);
     
                 element = {
@@ -438,39 +556,39 @@ const module = (function() {
                         inline: inline
                     }
                 }
-            } else if (token[29]) { // end of div tag
+            } else if (token[TokenType.HTML_DIV_END]) {
                 element = {
                     type: "div-tag-end",
                     data: {
                         inline: inline
                     }
                 }
-            } else if (token[30] || token[31]) { // paragraph tag
-                const klass = (token[30] || "").match(/class=(?:\"([^"]+)\"|([^ ,>]+))/i);
+            } else if (token[TokenType.HTML_P_BEGIN] || token[TokenType.HTML_P_END]) {
+                const klass = (token[TokenType.HTML_P_BEGIN] || "").match(/class=(?:\"([^"]+)\"|([^ ,>]+))/i);
     
                 element = {
-                    type: "paragraph-tag" + (token[30] ? "-begin" : "-end"),
+                    type: "paragraph-tag" + (token[TokenType.HTML_P_BEGIN] ? "-begin" : "-end"),
                     data: {
                         class: klass ? (klass[1] || klass[2]) : "",
                         inline: inline,
                         break: true
                     }
                 }
-            } else if (token[32] || token[33]) { // blockquote tag
+            } else if (token[TokenType.HTML_BLOCKQUOTE_BEGIN] || token[TokenType.HTML_BLOCKQUOTE_END]) {
                 element = {
-                    type: "blockquote-tag" + (token[32] ? "-begin" : "-end"),
+                    type: "blockquote-tag" + (token[TokenType.HTML_BLOCKQUOTE_BEGIN] ? "-begin" : "-end"),
                     data: {
                         inline: inline
                     }
                 }
-            } else if (token[34] || token[35]) { // center tag
+            } else if (token[TokenType.HTML_CENTER_BEGIN] || token[TokenType.HTML_CENTER_END]) {
                 element = {
-                    type: "center-tag" + (token[34] ? "-begin" : "-end"),
+                    type: "center-tag" + (token[TokenType.HTML_CENTER_BEGIN] ? "-begin" : "-end"),
                     data: {
                         inline: inline
                     }
                 }
-            } else if (token[36]) { // pre tag
+            } else if (token[TokenType.HTML_PRE_BEGIN]) {
                 const subtexts = _split_text_for_delemeter(text, tokenizer.lastIndex, /<\/pre>/);
     
                 if (text_chunk) {
@@ -511,22 +629,22 @@ const module = (function() {
                
                 element    = null;
                 text_chunk = null;
-            } else if (token[38] || token[39]) { // table, tr, th, td tag
+            } else if (token[TokenType.HTML_TABLE_BEGIN] || token[TokenType.HTML_TABLE_END]) { // table, tr, th, td tag
                 element = {
-                    type: (token[38] || token[39]) + "-tag" + (token[38] ? "-begin" : "-end"),
+                    type: (token[TokenType.HTML_TABLE_BEGIN] || token[TokenType.HTML_TABLE_END]) + "-tag" + (token[TokenType.HTML_TABLE_BEGIN] ? "-begin" : "-end"),
                     data: {
                         inline: inline,
                         break: true
                     }
                 }
-            } else if (token[40]) { // br tag
+            } else if (token[TokenType.HTML_BR]) {
                 element = {
                     type: "br-tag",
                     data: {
                         inline: inline
                     }
                 }
-            } else if (token[41]) { // hr tag
+            } else if (token[TokenType.HTML_HR]) {
                 element = {
                     type: "hr-tag",
                     data: {
@@ -534,14 +652,14 @@ const module = (function() {
                         break: true
                     }
                 }
-            } else if (token[42]) { // unhandled tag
+            } else if (token[TokenType.HTML_OTHER]) {
                 element = {
                     type: "tag",
                     data: {
-                        inline:inline
+                        inline: inline
                     }
                 }
-            } else if (token[43]) { // inline formatting: *em*, **strong**, ...
+            } else if (token[TokenType.TEXT_FORMATTING]) { // inline formatting: *em*, **strong**, ...
                 const symbols = token[45] || (token[46] || (token[47] || ""));
                 const symbol = symbols ? symbols[0] : "";
                 const prior = token[44] || "";
@@ -565,15 +683,15 @@ const module = (function() {
                             element = {
                                 type: type + "-end",
                                 data: {
-                                    trailing:symbols.substring(0, begin_symbols.length - length)
+                                    trailing: symbols.substring(0, begin_symbols.length - length)
                                 }
                             }
                         } else {
                             element = {
                                 type: "text",
                                 data: {
-                                    text:prior + symbols,
-                                    inline:inline
+                                    text: prior + symbols,
+                                    inline: inline
                                 }
                             }
                         }
@@ -582,10 +700,10 @@ const module = (function() {
                             element = {
                                 type: "formatter-begin",
                                 data: {
-                                    text:prior + symbols,
-                                    symbols:symbols,
-                                    prior:prior,
-                                    inline:inline
+                                    text: prior + symbols,
+                                    symbols: symbols,
+                                    prior: prior,
+                                    inline: inline
                                 }
                             }
     
@@ -596,8 +714,8 @@ const module = (function() {
                             element = {
                                 type: "text",
                                 data: {
-                                    text:prior + symbols,
-                                    inline:inline
+                                    text: prior + symbols,
+                                    inline: inline
                                 }
                             }
                         }
@@ -606,7 +724,7 @@ const module = (function() {
                     element = {
                         type: "break",
                         data: {
-                            text:token[43]
+                            text: token[TokenType.TEXT_FORMATTING]
                         }
                     }
     
@@ -714,7 +832,7 @@ const module = (function() {
             elements.push({
                 type: tag + "-tag-begin",
                 data: {
-                    inline:inline
+                    inline: inline
                 }
             });
     
@@ -731,7 +849,7 @@ const module = (function() {
             elements.push({
                 type: last_begin_tag["type"].split("-")[0] + "-tag-end",
                 data: {
-                    inline:last_begin_tag.data["inline"]
+                    inline: last_begin_tag.data["inline"]
                 }
             });
         }
@@ -740,7 +858,7 @@ const module = (function() {
             elements.push({
                 type: tag + "-tag-begin",
                 data: {
-                    inline:inline
+                    inline: inline
                 }
             });        
         }
@@ -782,14 +900,7 @@ const module = (function() {
 
     return {
         parse: function(text) {
-            const elements = _parse_to_markdown(_normalize_text(text), false);
-        
-            elements.forEach((element) => {
-                console.log(JSON.stringify(element));
-                console.log("============");
-            });
-        
-            return elements;
+            return _parse_to_markdown(_normalize_text(text), false);
         },
     }
 })();
