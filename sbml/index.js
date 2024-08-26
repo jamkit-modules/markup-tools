@@ -6,7 +6,7 @@ const module = (function() {
         var center_ended = false;
         var inline_depth = 0;
     
-        elements.forEach(function(element) {
+        elements.forEach((element) => {
             if (element.type === "text") {
                 if (!element.data["inline"] && inline_depth == 0) {
                     sbml += center_ended ? "\n=end center\n" : "";
@@ -40,7 +40,7 @@ const module = (function() {
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += "\n";
                     sbml += "=begin line\n"
-                    sbml += "=(object blank: style=line)=" + "\n";
+                    sbml += "=(object blank: style=line)=\n";
                     sbml += "=end line\n";
     
                     center_begin_pos = sbml.length;
@@ -61,9 +61,9 @@ const module = (function() {
                     sbml += has_center_tag ? "\n=begin center\n" : "";
                     sbml += element.data["leadings"];
                     sbml += "\n";
-                    sbml += "=begin heading-" + element.data["level"] + (needs_center_style ? ": style=center" : "") + "\n";
+                    sbml += `=begin heading-${element.data["level"]}` + (needs_center_style ? ": style=center" : "") + "\n";
                     sbml += _elements_to_sbml(element.data["elements"], images, true) + "\n";
-                    sbml += "=end heading-" + element.data["level"] + "\n";
+                    sbml += `=end heading-${element.data["level"]}\n`;
                     sbml += has_center_tag ? "\n=end center\n" : "";
     
                     center_begin_pos = sbml.length;
@@ -98,8 +98,8 @@ const module = (function() {
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += "\n";
                     sbml += "=begin list\n";
-                    element.data["items"].forEach(function(item) {
-                        sbml += "=begin list-item: style=list-level-" + item[1] + ", bullet-text=\"" + (item[0] || "•") + "\"\n";
+                    element.data["items"].forEach((item) => {
+                        sbml += `=begin list-item: style=list-level-${item[1]}, bullet-text="${item[0] || "•"}"\n`;
                         sbml += _elements_to_sbml(item[2], images, false) + "\n";
                         sbml += "=end list-item\n";
                     });
@@ -108,7 +108,7 @@ const module = (function() {
                     center_begin_pos = sbml.length;
                     center_ended = false;
                 } else {
-                    element.data["items"].forEach(function(item) {
+                    element.data["items"].forEach((item) => {
                         sbml += "\n";
                         sbml += (item[0] || "•") + " " + _elements_to_sbml(item[2], images, true);
                     });
@@ -133,9 +133,9 @@ const module = (function() {
     
                     var even = false;
                     element.data["rows"].forEach((row) => {
-                        sbml += "=begin tr: style=" + (even ? "tr-even" : "tr-odd") + "\n";
+                        sbml += `=begin tr: style=${even ? "tr-even" : "tr-odd"}\n`;
                         row.forEach((elements) => {
-                            sbml += "=begin td: style=" + (even ? "td-even" : "td-odd") + "\n";
+                            sbml += `=begin td: style=${even ? "td-even" : "td-odd"}\n`;
                             sbml += _elements_to_sbml(elements, images, false) + "\n";
                             sbml += "=end td\n";
                         });
@@ -189,7 +189,7 @@ const module = (function() {
 
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += "\n";
-                    sbml += "=begin heading-" + element.data["level"] + (needs_center_style ? ": style=center" : "") + "\n";
+                    sbml += `=begin heading-${element.data["level"]}` + (needs_center_style ? ": style=center" : "") + "\n";
     
                     center_begin_pos = sbml.length;
                     center_ended = false;
@@ -204,7 +204,7 @@ const module = (function() {
                 if (!element.data["inline"] && inline_depth == 0) {
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += "\n";
-                    sbml += "=end heading-" + element.data["level"] + "\n";
+                    sbml += `=end heading-${element.data["level"]}\n`;
     
                     center_begin_pos = sbml.length;
                     center_ended = false;
@@ -219,7 +219,7 @@ const module = (function() {
                 if (!element.data["inline"] && inline_depth == 0) {
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += "\n";
-                    sbml += "=begin div: style=\"" + (element.data["class"] || "") + "\"\n";
+                    sbml += `=begin div: style="${element.data["class"] || ""}"\n`;
     
                     center_begin_pos = sbml.length;
                     center_ended = false;
@@ -249,7 +249,7 @@ const module = (function() {
                 if (!element.data["inline"] && inline_depth == 0) {
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += "\n";
-                    sbml += "=begin quote: style=\"" + (element.data["class"] || "") + "\"\n";
+                    sbml += `=begin quote: style="${element.data["class"] || ""}"\n`;
     
                     center_begin_pos = sbml.length;
                     center_ended = false;
@@ -331,7 +331,7 @@ const module = (function() {
                 if (!element.data["inline"] && inline_depth == 0) {
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += "\n";
-                    sbml += "=begin " + element.type.replace("-tag-begin", "") + "\n";
+                    sbml += `=begin ${element.type.replace("-tag-begin", "") }\n`;
     
                     center_begin_pos = sbml.length;
                     center_ended = false;
@@ -346,7 +346,7 @@ const module = (function() {
                 if (!element.data["inline"] && inline_depth == 0) {
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += "\n";
-                    sbml += "=end " + element.type.replace("-tag-end", "") + "\n";
+                    sbml += `=end ${element.type.replace("-tag-end", "")}\n`;
     
                     center_begin_pos = sbml.length;
                     center_ended = false;
@@ -378,7 +378,7 @@ const module = (function() {
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += "\n";
                     sbml += "=begin line\n"
-                    sbml += "=(object blank: style=line)=" + "\n";
+                    sbml += "=(object blank: style=line)=\n";
                     sbml += "=end line\n";
     
                     center_begin_pos = sbml.length;
@@ -391,36 +391,36 @@ const module = (function() {
             }
     
             if (element.type === "image") {
-                var image_url = _encode_url(_url_for_image(element.data["url"]));
+                var url = _url_for_image(_cleanup_url(element.data["url"]));
                 var filename = element.data["filename"] || "";
     
                 if (!element.data["inline"] && inline_depth == 0) {
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += "\n";
-                    sbml += "=object image: style=image, image-url=\"" + image_url + "\", reuse-id=\"" + image_url + "\", filename=\"" + filename + "\"" + "\n";
+                    sbml += `=object image: url="${url}", reuse-id="${url}", filename="${filename}", style=image\n`;
     
                     center_begin_pos = sbml.length;
                     center_ended = false;
                 } else {
-                    sbml += "=(object image: style=image, image-url=\"" + image_url + "\", reuse-id=\"" + image_url + "\", filename=\"" + filename + "\")=";
+                    sbml += `=(object image: url="${url}", reuse-id="${url}", filename="${filename}, style=image")=`;
                 }
     
                 return;
             }
     
             if (element.type === "image-tag") {
-                var image_url = _encode_url(_url_for_image(element.data["url"]));
+                var url = _url_for_image(_cleanup_url(element.data["url"]));
                 var filename = element.data["filename"] || "";
     
                 if (!element.data["inline"] && inline_depth == 0) {
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += "\n";
-                    sbml += "=object image: style=image, image-url=\"" + image_url + "\", reuse-id=\"" + image_url + "\", filename=\"" + filename + "\"" + "\n";
+                    sbml += `=object image: url="${url}", reuse-id="${url}", filename="${filename}", style=image\n`;
     
                     center_begin_pos = sbml.length;
                     center_ended = false;
                 } else {
-                    sbml += "=(object image: style=image, image-url=\"" + image_url + "\", reuse-id=\"" + image_url + "\", filename=\"" + filename + "\")=";
+                    sbml += `=(object image: url=\"${url}", reuse-id="${url}", filename="${filename}", style=image)=`;
                 }
     
                 return;
@@ -433,35 +433,35 @@ const module = (function() {
                     if (!element.data["inline"] && inline_depth == 0) {
                         sbml += center_ended ? "\n=end center\n" : "";
                         sbml += "\n";
-                        sbml += "=object youtube: style=youtube, video-id=\"" + youtube_video_id + "\", reuse-id=\"" + youtube_video_id + "\"" + "\n";
+                        sbml += `=object youtube: video-id="${youtube_video_id}", reuse-id="${youtube_video_id}, style=youtube\n`;
     
                         center_begin_pos = sbml.length;
                         center_ended = false;
                     } else {
-                        sbml += "=(object youtube: style=youtube, video-id=\"" + youtube_video_id + "\", reuse-id=\"" + youtube_video_id + "\")=";
+                        sbml += `=(object youtube: video-id="${youtube_video_id}", reuse-id="${youtube_video_id}, style=youtube")=`;
                     }
     
                     return;
                 }
     
-                const url = _encode_url(element.data["url"]);
+                const url = _cleanup_url(element.data["url"]);
     
                 if (!element.data["inline"] && inline_depth == 0) {
                     sbml += center_ended ? "\n=end center\n" : "";
                     sbml += "\n";
-                    sbml += "=object web: style=web, url=\"" + url + "\", reuse-id=\"" + url + "\"" + "\n";
+                    sbml += `=object web: url="${url}", reuse-id="${url}, style=web"\n`;
     
                     center_begin_pos = sbml.length;
                     center_ended = false;
                 } else {
-                    sbml += "=(object web: style=web, url=\"" + url + "\", reuse-id=\"" + url + "\")=";
+                    sbml += `=(object web: url="${url}", reuse-id="${url}", style=web)=`;
                 }
     
                 return;
             }
     
             if (element.type === "link-begin") {
-                sbml += "=[link: script=open_url, url=\"" + _encode_url(element.data["url"]) + "\"|";
+                sbml += `=[link: script=open_url, url="${_cleanup_url(element.data["url"])}"|`;
                 inline_depth = inline_depth + 1;
     
                 return;
@@ -475,7 +475,7 @@ const module = (function() {
             }
     
             if (element.type === "anchor-tag") {
-                sbml += "=[link: script=open_url, url=\"" + _encode_url(element.data["url"]) + "\"|" + _elements_to_sbml(element.data["elements"], images, true) + "]=";
+                sbml += `=[link: script=open_url, url="${_cleanup_url(element.data["url"])}"|${_elements_to_sbml(element.data["elements"], images, true)}]=`;
     
                 return;
             }
@@ -487,36 +487,36 @@ const module = (function() {
                     if (!element.data["inline"] && inline_depth == 0) {
                         sbml += center_ended ? "\n=end center\n" : "";
                         sbml += "\n";
-                        sbml += "=object youtube: style=youtube, video-id=\"" + youtube_video_id + "\", reuse-id=\"" + youtube_video_id + "\"" + "\n";
+                        sbml += `=object youtube: video-id="${youtube_video_id}", reuse-id="${youtube_video_id}", style=youtube\n`;
     
                         center_begin_pos = sbml.length;
                         center_ended = false;
                     } else {
-                        sbml += "=(object youtube: style=youtube, video-id=\"" + youtube_video_id + "\", reuse-id=\"" + youtube_video_id + "\")=";
+                        sbml += `=(object youtube: video-id="${youtube_video_id}", reuse-id="${youtube_video_id}", style=youtube)=`;
                     }
     
                     return;
                 }
     
                 if (_is_image_url((images || []), element.data["url"]) || _is_image_path(element.data["path"] || "")) {
-                    const image_url = _encode_url(_url_for_image(element.data["url"]));
+                    const url = _url_for_image(element.data["url"]);
                     const filename = element.data["filename"] || "";
                     
                     if (!element.data["inline"] && inline_depth == 0) {
                         sbml += center_ended ? "\n=end center\n" : "";
                         sbml += "\n";
-                        sbml += "=object image: style=image, image-url=\"" + image_url + "\", reuse-id=\"" + image_url + "\", filename=\"" + filename + "\"" + "\n";
+                        sbml += `=object image: url="${url}", reuse-id="${url}", filename="${filename}", style=image\n`;
     
                         center_begin_pos = sbml.length;
                         center_ended = false;
                     } else {
-                        sbml += "=(object image: style=image, image-url=\"" + image_url + "\", reuse-id=\"" + image_url + "\", filename=\"" + filename + "\")=";
+                        sbml += `=(object image: url="${url}", reuse-id="${url}", filename="${filename}", style=image)=`;
                     }
     
                     return;
                 }
     
-                sbml += "=[link: script=open_url, url=\"" + _encode_url(element.data["url"]) + "\"|" + element.data["url"] + "]=";
+                sbml += "=[link: script=open_url, url=\"" + _cleanup_url(element.data["url"]) + "\"|" + element.data["url"] + "]=";
     
                 return;
             }
@@ -528,7 +528,7 @@ const module = (function() {
             }
     
             if (["italic", "em", "em-italic", "linethrough"].includes(element.type.replace("-begin", ""))) {
-                sbml += element.data["prior"] + "=[" + element.type.replace("-begin", "") + "|";
+                sbml += element.data["prior"] + `=[${element.type.replace("-begin", "")}|`;
                 inline_depth = inline_depth + 1;
     
                 return;
@@ -542,7 +542,7 @@ const module = (function() {
             }
     
             if (["strong", "strike", "b", "i", "code", "sub", "sup"].includes(element.type.replace("-tag-begin", ""))) {
-                sbml += "=[" + element.type.replace("-tag-begin", "") + "|";
+                sbml += `=[${element.type.replace("-tag-begin", "")}|`;
                 inline_depth = inline_depth + 1;
     
                 return;
@@ -574,7 +574,7 @@ const module = (function() {
     function _handle_text(text) {
         text = text.replace(/\u2028|\u2029/g, "\n"); // unicode line seperators
         text = text.replace(/\\/g, "").replace(/(\[|\]|=|\(|\))/g, "\\$1");
-        text = text.replace(/(^|\W+)@([a-z0-9\-]+(?:\.[a-z0-9\-]+)*)/g, "$1=[user:username=\"$2\"|@$2]=");
+        text = text.replace(/(^|\W+)@([a-z0-9\-]+(?:\.[a-z0-9\-]+)*)/g, `$1=[user:username="$2"|@$2]=`);
         text = text.replace(/[ \t][ \t]+/g, " ");
         text = _replace_emoji_chars(text, "=[emoji|$1]=");
         text = decode("html", text);
@@ -604,7 +604,7 @@ const module = (function() {
         }
     }
     
-    function _encode_url(url) {
+    function _cleanup_url(url) {
         url = url.replace(/['"‘’]/g, "");
     
         return url;
@@ -629,7 +629,7 @@ const module = (function() {
     }
     
     function _url_for_image(url, size) {
-        return "https://cdn.steemitimages.com/" + (size || "640x0") + "/" + url;
+        return url;
     }
 
     return {
