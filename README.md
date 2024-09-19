@@ -3,7 +3,7 @@
 ```
 const markdown = require("markup-tools/markdown"),
       sbml = require("markup-tools/sbml");
-      
+
 var markdown_text = ".....";
 var sbml_text = sbml.generate_from_markdown(markdown.parse(markdown_text));
 
@@ -16,13 +16,13 @@ var sbml_text = sbml.generate_from_markdown(markdown.parse(markdown_text));
 
 ```
     # This is a level 1 heading
-    
+
     ## This is a level 2 heading
-    
+
     ### This is a level 3 heading
-    
+
     #### This is a level 4 heading
-    
+
     ##### This is a level 5 heading
 
     ###### This is a level 6 heading
@@ -227,13 +227,13 @@ var sbml_text = sbml.generate_from_markdown(markdown.parse(markdown_text));
 
 ```
     <h1>This is a level 1 heading</h1>
-    
+
     <h2>This is a level 2 heading</h2>
-    
+
     <h3>This is a level 3 heading</h3>
-    
+
     <h4>This is a level 4 heading</h4>
-    
+
     <h5>This is a level 5 heading</h5>
 
     <h6>This is a level 6 heading</h6>
